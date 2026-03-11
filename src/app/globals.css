@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #030712;
+  color: #e5e7eb;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}

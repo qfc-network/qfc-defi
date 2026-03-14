@@ -11,12 +11,76 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      branch_tag: ${{ steps.vars.outputs.branch_tag }}
+      branch_name: ${{ steps.vars.outputs.branch_name }}
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=sha,prefix=${{ github.ref_name }}-sha-,enable=${{ github.ref_type == 'branch' }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Prepare vars
+        id: vars
+        run: |
+          echo "branch_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "branch_tag=${GITHUB_REF_NAME}-sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build-amd64:
+    needs: meta
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build amd64
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.meta.outputs.branch_name }}-amd64
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.meta.outputs.branch_tag }}-amd64
+          labels: ${{ needs.meta.outputs.labels }}
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+  build-arm64:
+    needs: meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,30 +99,56 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha
-            type=sha,prefix=${{ github.ref_name }}-sha-,enable=${{ github.ref_type == 'branch' }}
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push
+      - name: Build arm64
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.meta.outputs.branch_name }}-arm64
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.meta.outputs.branch_tag }}-arm64
+          labels: ${{ needs.meta.outputs.labels }}
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,mode=max,scope=arm64
+
+  merge-manifest:
+    needs: [meta, build-amd64, build-arm64]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifests
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          BRANCH_NAME: ${{ needs.meta.outputs.branch_name }}
+          BRANCH_TAG: ${{ needs.meta.outputs.branch_tag }}
+        run: |
+          docker buildx imagetools create -t "$IMAGE:$BRANCH_NAME" \
+            "$IMAGE:$BRANCH_NAME-amd64" \
+            "$IMAGE:$BRANCH_NAME-arm64"
+
+          docker buildx imagetools create -t "$IMAGE:$BRANCH_TAG" \
+            "$IMAGE:$BRANCH_TAG-amd64" \
+            "$IMAGE:$BRANCH_TAG-arm64"
+
+          if [ "$BRANCH_NAME" = "main" ]; then
+            docker buildx imagetools create -t "$IMAGE:latest" \
+              "$IMAGE:$BRANCH_NAME-amd64" \
+              "$IMAGE:$BRANCH_NAME-arm64"
+          fi
 
       - name: Dispatch image tag to qfc-testnet
-        if: github.event_name != 'pull_request' && github.ref_type == 'branch'
+        if: github.ref_type == 'branch'
         continue-on-error: true
         env:
           SHORT_SHA: ${{ github.sha }}

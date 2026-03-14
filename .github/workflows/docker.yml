@@ -2,9 +2,9 @@ name: Build & Push Docker Image
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 env:
   REGISTRY: ghcr.io
@@ -38,8 +38,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha
             type=ref,event=branch
+            type=sha
+            type=sha,prefix=${{ github.ref_name }}-sha-,enable=${{ github.ref_type == 'branch' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
@@ -51,3 +52,18 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Dispatch image tag to qfc-testnet
+        if: github.event_name != 'pull_request' && github.ref_type == 'branch'
+        continue-on-error: true
+        env:
+          SHORT_SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          TAG="${BRANCH}-sha-${SHORT_SHA:0:7}"
+          curl -sf -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.TESTNET_DISPATCH_TOKEN }}" \
+            https://api.github.com/repos/qfc-network/qfc-testnet/dispatches \
+            -d "{\"event_type\":\"image-published\",\"client_payload\":{\"service\":\"defi\",\"tag\":\"${TAG}\",\"branch\":\"${BRANCH}\",\"sha\":\"${{ github.sha }}\"}}"
+          echo "Dispatched qfc-testnet update for defi: ${TAG}"

@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/vaults", label: "Vaults" },
   { href: "/launch", label: "Launch" },
   { href: "/privacy", label: "Privacy" },
+  { href: "/stealth", label: "Stealth" },
 ];
 
 export default function Navbar() {

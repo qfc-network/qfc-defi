@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/stake", label: "Stake" },
   { href: "/vaults", label: "Vaults" },
   { href: "/launch", label: "Launch" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export default function Navbar() {

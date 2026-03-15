@@ -9,7 +9,7 @@ export interface Token {
 
 export const TOKENS: Record<string, Token> = {
   QFC: { symbol: "QFC", name: "QFC Token", icon: "◆", decimals: 18, priceUSD: 12.5 },
-  QUSD: { symbol: "QUSD", name: "QFC USD", icon: "$", decimals: 18, priceUSD: 1.0 },
+  QUSD: { symbol: "qUSD", name: "qUSD Stablecoin", icon: "$", decimals: 18, priceUSD: 1.0 },
   stQFC: { symbol: "stQFC", name: "Staked QFC", icon: "◇", decimals: 18, priceUSD: 13.1 },
   TTK: { symbol: "TTK", name: "Test Token", icon: "●", decimals: 18, priceUSD: 0.85 },
   QDOGE: { symbol: "QDOGE", name: "QFC Doge", icon: "🐕", decimals: 18, priceUSD: 0.024 },
@@ -141,7 +141,7 @@ export const MOCK_VAULTS: VaultData[] = [
     sharePrice: 1.0384,
   },
   {
-    name: "QUSD Stable Vault",
+    name: "qUSD Stable Vault",
     symbol: "yvQUSD",
     asset: TOKENS.QUSD,
     apy: 8.2,

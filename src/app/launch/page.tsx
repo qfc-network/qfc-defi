@@ -176,7 +176,7 @@ export default function LaunchPage() {
                   label="Contribute QUSD"
                   value={amount}
                   onChange={setAmount}
-                  tokenSymbol="QUSD"
+                  tokenSymbol="qUSD"
                   tokenIcon={TOKENS.QUSD.icon}
                   balance={50000}
                   priceUSD={TOKENS.QUSD.priceUSD}

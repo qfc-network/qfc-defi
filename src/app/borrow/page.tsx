@@ -17,7 +17,7 @@ export default function BorrowPage() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "deposit", label: "Deposit" },
-    { key: "mint", label: "Mint QUSD" },
+    { key: "mint", label: "Mint qUSD" },
     { key: "repay", label: "Repay" },
     { key: "withdraw", label: "Withdraw" },
   ];
@@ -30,8 +30,8 @@ export default function BorrowPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Borrow QUSD</h1>
-        <p className="mt-1 text-gray-400">Deposit QFC as collateral and mint QUSD stablecoin</p>
+        <h1 className="text-2xl font-bold text-white">Borrow qUSD</h1>
+        <p className="mt-1 text-gray-400">Deposit QFC as collateral and mint qUSD stablecoin</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -50,11 +50,11 @@ export default function BorrowPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Debt</span>
-                <span className="text-sm font-medium text-white">{cdp.debt.toLocaleString()} QUSD</span>
+                <span className="text-sm font-medium text-white">{cdp.debt.toLocaleString()} qUSD</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Accrued Fees</span>
-                <span className="text-sm font-medium text-amber-400">{cdp.accruedFees} QUSD</span>
+                <span className="text-sm font-medium text-amber-400">{cdp.accruedFees} qUSD</span>
               </div>
               <hr className="border-gray-800" />
               <div className="flex justify-between">
@@ -117,10 +117,10 @@ export default function BorrowPage() {
             {tab === "mint" && (
               <>
                 <TokenInput
-                  label="Mint QUSD"
+                  label="Mint qUSD"
                   value={amount}
                   onChange={setAmount}
-                  tokenSymbol="QUSD"
+                  tokenSymbol="qUSD"
                   tokenIcon={TOKENS.QUSD.icon}
                   priceUSD={TOKENS.QUSD.priceUSD}
                 />
@@ -134,17 +134,17 @@ export default function BorrowPage() {
                     </span>
                   </div>
                 </div>
-                <TxButton label="Mint QUSD" onClick={handleTx} disabled={!amount} />
+                <TxButton label="Mint qUSD" onClick={handleTx} disabled={!amount} />
               </>
             )}
 
             {tab === "repay" && (
               <>
                 <TokenInput
-                  label="Repay QUSD Debt"
+                  label="Repay qUSD Debt"
                   value={amount}
                   onChange={setAmount}
-                  tokenSymbol="QUSD"
+                  tokenSymbol="qUSD"
                   tokenIcon={TOKENS.QUSD.icon}
                   balance={cdp.debt + cdp.accruedFees}
                   priceUSD={TOKENS.QUSD.priceUSD}

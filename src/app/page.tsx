@@ -40,7 +40,7 @@ export default function HomePage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="Collateral" value={formatUSD(p.collateralValue)} subtitle={formatQfc(p.collateralValue / 12.5)} />
-        <StatCard label="Debt" value={formatUSD(p.debtValue)} subtitle="QUSD borrowed" />
+        <StatCard label="Debt" value={formatUSD(p.debtValue)} subtitle="qUSD borrowed" />
         <StatCard label="Staked" value={formatUSD(p.stakedValue)} subtitle="QFC + stQFC" />
         <StatCard label="Vaults" value={formatUSD(p.vaultBalance)} subtitle="Yield deposits" />
         <div className="col-span-2 rounded-xl border border-gray-800 bg-gray-900/60 p-5 lg:col-span-1">
@@ -58,7 +58,7 @@ export default function HomePage() {
         <h2 className="mb-4 text-lg font-semibold text-white">Your Positions</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <PositionCard
-            title="QUSD Borrow (CDP)"
+            title="qUSD Borrow (CDP)"
             href="/borrow"
             accentColor="cyan"
             stats={[
@@ -98,7 +98,7 @@ export default function HomePage() {
             ]}
           />
           <PositionCard
-            title="QUSD Stable Vault"
+            title="qUSD Stable Vault"
             href="/vaults"
             accentColor="amber"
             stats={[

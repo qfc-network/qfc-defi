@@ -49,7 +49,7 @@ async function loadSnarkjs(): Promise<any> {
   // In Next.js, snarkjs must be loaded dynamically on client side
   if (typeof window !== "undefined") {
     // Browser: load from CDN or bundled
-    // @ts-ignore
+    // @ts-expect-error snarkjs has no usable TS typings for this dynamic browser import
     const snarkjs = await import("snarkjs");
     return snarkjs;
   }

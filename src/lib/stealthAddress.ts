@@ -179,7 +179,14 @@ export async function fetchAnnouncements(
 ): Promise<ScannedTransfer[]> {
   const contract = new ethers.Contract(registryAddress, STEALTH_ABI, provider);
   const raw = await contract.getAnnouncements(fromIndex, count);
-  return raw.map((a: any) => ({
+  return raw.map((a: {
+    token: string;
+    amount: bigint;
+    stealthAddress: string;
+    ephemeralPubKey: string;
+    viewTag: number;
+    timestamp: bigint;
+  }) => ({
     token: a.token,
     amount: a.amount,
     stealthAddress: a.stealthAddress,

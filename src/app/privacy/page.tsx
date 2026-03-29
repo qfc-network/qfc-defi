@@ -2,16 +2,12 @@
 
 import { useState } from "react";
 import StatCard from "@/components/StatCard";
-import TokenInput from "@/components/TokenInput";
 import TxButton from "@/components/TxButton";
-import { TOKENS } from "@/lib/mock-data";
 import { formatCompact } from "@/lib/format";
 import {
-  DENOMINATIONS,
   DenominationKey,
   generateNote,
   serializeNote,
-  deserializeNote,
 } from "@/lib/shieldedPool";
 
 type Tab = "deposit" | "withdraw";

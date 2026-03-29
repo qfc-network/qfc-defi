@@ -45,22 +45,39 @@ export interface ProofResult {
 /**
  * Load snarkjs dynamically (works in browser and Node.js)
  */
-async function loadSnarkjs(): Promise<any> {
+type SnarkProofLike = {
+  pi_a: [string, string, ...unknown[]];
+  pi_b: [[string, string, ...unknown[]], [string, string, ...unknown[]], ...unknown[]];
+  pi_c: [string, string, ...unknown[]];
+};
+
+type SnarkjsLike = {
+  groth16: {
+    fullProve: (
+      input: WithdrawInput | ComplianceWithdrawInput,
+      wasmUrl: string,
+      zkeyUrl: string,
+    ) => Promise<{ proof: SnarkProofLike; publicSignals: string[] }>;
+    verify: (verificationKey: unknown, publicSignals: string[], proof: unknown) => Promise<boolean>;
+  };
+};
+
+async function loadSnarkjs(): Promise<SnarkjsLike> {
   // In Next.js, snarkjs must be loaded dynamically on client side
   if (typeof window !== "undefined") {
     // Browser: load from CDN or bundled
-    // @ts-expect-error snarkjs has no usable TS typings for this dynamic browser import
     const snarkjs = await import("snarkjs");
-    return snarkjs;
+    return snarkjs as SnarkjsLike;
   }
-  // Node.js
-  return require("snarkjs");
+  // Node.js fallback via dynamic import to satisfy eslint
+  const snarkjs = await import("snarkjs");
+  return snarkjs as SnarkjsLike;
 }
 
 export class ZKProver {
   private wasmUrl: string;
   private zkeyUrl: string;
-  private snarkjs: any;
+  private snarkjs: SnarkjsLike | null = null;
   private ready = false;
 
   /**
@@ -86,7 +103,7 @@ export class ZKProver {
    * @returns proof and publicSignals formatted for Solidity
    */
   async generateWithdrawProof(input: WithdrawInput): Promise<ProofResult> {
-    if (!this.ready) throw new Error("Prover not initialized. Call init() first.");
+    if (!this.ready || !this.snarkjs) throw new Error("Prover not initialized. Call init() first.");
 
     const { proof, publicSignals } = await this.snarkjs.groth16.fullProve(
       input,
@@ -104,7 +121,7 @@ export class ZKProver {
    * Generate a Groth16 compliance withdrawal proof
    */
   async generateComplianceProof(input: ComplianceWithdrawInput): Promise<ProofResult> {
-    if (!this.ready) throw new Error("Prover not initialized. Call init() first.");
+    if (!this.ready || !this.snarkjs) throw new Error("Prover not initialized. Call init() first.");
 
     const { proof, publicSignals } = await this.snarkjs.groth16.fullProve(
       input,
@@ -124,11 +141,11 @@ export class ZKProver {
   async verifyLocally(
     verificationKeyUrl: string,
     publicSignals: string[],
-    proof: any,
+    proof: unknown,
   ): Promise<boolean> {
-    if (!this.ready) throw new Error("Prover not initialized. Call init() first.");
+    if (!this.ready || !this.snarkjs) throw new Error("Prover not initialized. Call init() first.");
 
-    const vKey = await fetch(verificationKeyUrl).then(r => r.json());
+    const vKey: unknown = await fetch(verificationKeyUrl).then(r => r.json());
     return this.snarkjs.groth16.verify(vKey, publicSignals, proof);
   }
 }
@@ -137,7 +154,7 @@ export class ZKProver {
  * Format a snarkjs proof for Solidity verifyProof() call
  * Note: pB coordinates are swapped (snarkjs convention vs Solidity convention)
  */
-function formatProofForSolidity(proof: any): Groth16Proof {
+function formatProofForSolidity(proof: SnarkProofLike): Groth16Proof {
   return {
     pA: [proof.pi_a[0], proof.pi_a[1]],
     pB: [
